@@ -1,0 +1,6 @@
+# Copy to android/key.properties and replace with values for your existing upload keystore.
+# Keep android/key.properties and the keystore file out of version control.
+storeFile=path/to/upload-keystore.jks
+storePassword=replace-locally
+keyAlias=upload
+keyPassword=replace-locally

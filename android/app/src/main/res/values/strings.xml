@@ -1,0 +1,12 @@
+<resources>
+    <string name="playback_notification_channel_name">Prayer audio</string>
+    <string name="playback_notification_channel_description">Local prayer audio playback.</string>
+    <string name="playback_notification_title">Ezan</string>
+    <string name="playback_notification_text_default">Prayer audio is playing.</string>
+    <string name="playback_notification_text">%1$s prayer audio is playing.</string>
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+</resources>

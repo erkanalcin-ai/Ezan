@@ -1,0 +1,12 @@
+<resources>
+    <string name="playback_notification_channel_name">Ezan sesi</string>
+    <string name="playback_notification_channel_description">Yerel namaz vakti sesinin çalınması.</string>
+    <string name="playback_notification_title">Ezan</string>
+    <string name="playback_notification_text_default">Ezan sesi çalınıyor.</string>
+    <string name="playback_notification_text">%1$s ezanı çalınıyor.</string>
+    <string name="prayer_fajr">İmsak</string>
+    <string name="prayer_dhuhr">Öğle</string>
+    <string name="prayer_asr">İkindi</string>
+    <string name="prayer_maghrib">Akşam</string>
+    <string name="prayer_isha">Yatsı</string>
+</resources>
