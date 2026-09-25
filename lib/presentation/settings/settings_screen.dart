@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 
 import '../../application/adhan/adhan_audio_preview_controller.dart';
 import '../../application/prayer/prayer_alarm_settings_controller.dart';
@@ -22,6 +23,10 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  static const _privacyPolicyChannel = MethodChannel(
+    'com.ezan.app/privacy_policy',
+  );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -362,6 +367,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       applicationName: l10n.appTitle,
                       aboutBoxChildren: [Text(l10n.aboutDescription)],
                       child: Text(l10n.aboutTitle),
+                    ),
+                  ),
+                ),
+                _SettingsGroup(
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: _LeadingIcon(icon: Icons.privacy_tip_outlined),
+                    title: Text(
+                      activeLocale.languageCode == 'tr'
+                          ? 'Gizlilik Politikası'
+                          : 'Privacy Policy',
+                    ),
+                    trailing: const Icon(Icons.open_in_new_rounded),
+                    onTap: () => _privacyPolicyChannel.invokeMethod<void>(
+                      'open',
                     ),
                   ),
                 ),

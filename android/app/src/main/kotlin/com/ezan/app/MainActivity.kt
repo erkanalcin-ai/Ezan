@@ -1,5 +1,8 @@
 package com.ezan.app
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -14,9 +17,36 @@ class MainActivity : FlutterActivity() {
     private var prayerAlarmChannel: MethodChannel? = null
     private var prayerCalculationSettingsChannel: MethodChannel? = null
     private var uiPreferencesChannel: MethodChannel? = null
+    private var privacyPolicyChannel: MethodChannel? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        privacyPolicyChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.ezan.app/privacy_policy",
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                if (call.method == "open") {
+                    try {
+                        startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse(PRIVACY_POLICY_URL),
+                            ),
+                        )
+                        result.success(null)
+                    } catch (_: ActivityNotFoundException) {
+                        result.error(
+                            "NO_BROWSER",
+                            "No application can open the privacy policy link.",
+                            null,
+                        )
+                    }
+                } else {
+                    result.notImplemented()
+                }
+            }
+        }
         qiblaOrientationStream = QiblaOrientationStreamHandler(this).also { handler ->
             EventChannel(
                 flutterEngine.dartExecutor.binaryMessenger,
@@ -185,6 +215,13 @@ class MainActivity : FlutterActivity() {
         prayerCalculationSettingsChannel = null
         uiPreferencesChannel?.setMethodCallHandler(null)
         uiPreferencesChannel = null
+        privacyPolicyChannel?.setMethodCallHandler(null)
+        privacyPolicyChannel = null
         super.onDestroy()
+    }
+
+    private companion object {
+        const val PRIVACY_POLICY_URL =
+            "https://erkanalcin-ai.github.io/Ezan/privacy-policy.html"
     }
 }
