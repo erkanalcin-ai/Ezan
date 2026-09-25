@@ -272,6 +272,30 @@ abstract class AppLocalizations {
   /// **'Kıble'**
   String get qiblaTitle;
 
+  /// No description provided for @qiblaSectionTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kıble'**
+  String get qiblaSectionTitle;
+
+  /// No description provided for @qiblaNorthReferenceDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kıble yönünü cihaz pusulanla aynı kuzey referansında göster.'**
+  String get qiblaNorthReferenceDescription;
+
+  /// No description provided for @trueNorth.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gerçek kuzey'**
+  String get trueNorth;
+
+  /// No description provided for @magneticNorth.
+  ///
+  /// In tr, this message translates to:
+  /// **'Manyetik kuzey'**
+  String get magneticNorth;
+
   /// No description provided for @qiblaSubtitle.
   ///
   /// In tr, this message translates to:
@@ -331,6 +355,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ayarlar'**
   String get settingsTitle;
+
+  /// No description provided for @appVersionLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sürüm {version}'**
+  String appVersionLabel(String version);
 
   /// No description provided for @calculationMethod.
   ///
@@ -422,6 +452,30 @@ abstract class AppLocalizations {
   /// **'Ezan'**
   String get adhanSectionTitle;
 
+  /// No description provided for @playAdhan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ezan\'ı çal'**
+  String get playAdhan;
+
+  /// No description provided for @muteAdhan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sessize al'**
+  String get muteAdhan;
+
+  /// No description provided for @unmuteAdhan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sesi aç'**
+  String get unmuteAdhan;
+
+  /// No description provided for @adhanPlaybackFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ezan çalınamadı.'**
+  String get adhanPlaybackFailed;
+
   /// No description provided for @volumeTitle.
   ///
   /// In tr, this message translates to:
@@ -487,6 +541,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çevrimdışı öncelikli namaz vakitleri ve kıble uygulaması.'**
   String get aboutDescription;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güncelle'**
+  String get updateNow;
 }
 
 class _AppLocalizationsDelegate

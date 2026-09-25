@@ -1,11 +1,8 @@
 import 'package:timezone/data/latest_all.dart' as timezone_data;
 
 class TimeZoneDatabase {
-  static bool _initialized = false;
+  static Future<void>? _initialization;
 
-  static void ensureInitialized() {
-    if (_initialized) return;
-    timezone_data.initializeTimeZones();
-    _initialized = true;
-  }
+  static Future<void> ensureInitialized() =>
+      _initialization ??= Future<void>(timezone_data.initializeTimeZones);
 }

@@ -21,6 +21,7 @@ class QiblaSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final dashboard = ref.watch(prayerDashboardProvider);
+    final northReference = ref.watch(qiblaNorthReferenceProvider);
     return dashboard.when(
       loading: () => _QiblaContent(
         bearing: null,
@@ -72,15 +73,22 @@ class QiblaSection extends ConsumerWidget {
             compact: compact,
             ultraCompact: ultraCompact,
           ),
-          data: (value) => _QiblaContent(
-            bearing: bearing,
-            orientation: value,
-            status: value.isReliable
-                ? l10n.qiblaDirectionStable
-                : l10n.qiblaSensorUnreliable,
-            compact: compact,
-            ultraCompact: ultraCompact,
-          ),
+          data: (value) {
+            final referenceBearing = northReference.usesTrueNorth
+                ? bearing
+                : QiblaBearingCalculator.normalizeDegrees(
+                    bearing - value.declinationDegrees,
+                  );
+            return _QiblaContent(
+              bearing: referenceBearing,
+              orientation: value,
+              status: value.isReliable
+                  ? l10n.qiblaDirectionStable
+                  : l10n.qiblaSensorUnreliable,
+              compact: compact,
+              ultraCompact: ultraCompact,
+            );
+          },
         );
       },
     );
@@ -163,17 +171,6 @@ class _QiblaContent extends StatelessWidget {
                             colorScheme.surface.withValues(alpha: 0.4),
                             colorScheme.surface.withValues(alpha: 0.46),
                           ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: _QiblaGuidePainter(
-                    color: colorScheme.primary.withValues(
-                      alpha: isDark ? 0.16 : 0.14,
-                    ),
                   ),
                 ),
               ),
@@ -326,27 +323,6 @@ class _ShortestPathArrowState extends State<_ShortestPathArrow> {
       color: widget.color,
     ),
   );
-}
-
-class _QiblaGuidePainter extends CustomPainter {
-  const _QiblaGuidePainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawLine(
-      Offset(size.width / 2, 0),
-      Offset(size.width / 2, size.height),
-      Paint()
-        ..color = color
-        ..strokeWidth = 0.8,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _QiblaGuidePainter oldDelegate) =>
-      oldDelegate.color != color;
 }
 
 class _KaabaIllustration extends StatelessWidget {

@@ -6,6 +6,7 @@ internal object UiPreferences {
     private const val PREFS = "ui_preferences"
     private const val THEME_MODE = "theme_mode"
     private const val LOCALE = "locale"
+    private const val QIBLA_NORTH_REFERENCE = "qibla_north_reference"
 
     fun getThemeMode(context: Context): String =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -36,5 +37,19 @@ internal object UiPreferences {
             editor.putString(LOCALE, languageCode)
         }
         editor.apply()
+    }
+
+    fun getQiblaNorthReference(context: Context): String =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(QIBLA_NORTH_REFERENCE, "true")
+            ?.takeIf { it == "true" || it == "magnetic" }
+            ?: "true"
+
+    fun setQiblaNorthReference(context: Context, reference: String) {
+        require(reference == "true" || reference == "magnetic")
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(QIBLA_NORTH_REFERENCE, reference)
+            .apply()
     }
 }

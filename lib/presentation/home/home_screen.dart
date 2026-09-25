@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../../application/adhan/adhan_audio_preview_controller.dart';
 import '../../application/prayer/prayer_dashboard_controller.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/location/location_service.dart';
@@ -30,7 +31,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
@@ -45,6 +45,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final dashboard = ref.watch(prayerDashboardProvider);
+    final adhanStatus = ref.watch(adhanPlaybackStatusProvider).asData?.value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -82,6 +83,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       child: _BrandHeader(onSettings: _showSettings),
                     ),
+                    if (adhanStatus?.isPlaying ?? false) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      _AdhanMuteButton(isMuted: adhanStatus!.isMuted),
+                    ],
                     Expanded(
                       child: _LocationPrompt(
                         loading: state.locationLoading,
@@ -142,6 +147,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ultraCompact: ultraCompact,
                         ),
                       ),
+                      if (adhanStatus?.isPlaying ?? false) ...[
+                        SizedBox(height: ultraCompact ? 1 : AppSpacing.xs),
+                        _AdhanMuteButton(
+                          isMuted: adhanStatus!.isMuted,
+                          compact: compact,
+                        ),
+                      ],
                       SizedBox(height: ultraCompact ? 0 : AppSpacing.xxs),
                       if (state.locationFailure != null && !ultraCompact)
                         Padding(
@@ -238,6 +250,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               },
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _AdhanMuteButton extends ConsumerWidget {
+  const _AdhanMuteButton({required this.isMuted, this.compact = false});
+
+  final bool isMuted;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final label = isMuted ? l10n.unmuteAdhan : l10n.muteAdhan;
+    final buttonStyle = FilledButton.styleFrom(
+      backgroundColor: isMuted ? scheme.surfaceContainer : scheme.primary,
+      foregroundColor: isMuted ? scheme.primary : scheme.onPrimary,
+      side: isMuted ? BorderSide(color: scheme.primary) : null,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 14 : 16,
+        vertical: compact ? 7 : 9,
+      ),
+      minimumSize: const Size(0, 40),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
+      shape: const StadiumBorder(),
+    );
+
+    return Center(
+      child: Semantics(
+        liveRegion: true,
+        child: FilledButton.icon(
+          key: const Key('adhan-mute-toggle'),
+          style: buttonStyle,
+          onPressed: () async {
+            await ref
+                .read(adhanPlaybackServiceProvider)
+                .setPlaybackMuted(!isMuted);
+          },
+          icon: Icon(
+            isMuted ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+            size: 18,
+          ),
+          label: Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(fontSize: 13),
+          ),
         ),
       ),
     );

@@ -13,8 +13,13 @@ class AndroidDeviceOrientationService implements DeviceOrientationService {
   Stream<DeviceOrientationSample> orientations({
     required double latitude,
     required double longitude,
+    required bool useTrueNorth,
   }) => _channel
-      .receiveBroadcastStream({'latitude': latitude, 'longitude': longitude})
+      .receiveBroadcastStream({
+        'latitude': latitude,
+        'longitude': longitude,
+        'useTrueNorth': useTrueNorth,
+      })
       .map((event) {
         final values = Map<Object?, Object?>.from(event as Map);
         return DeviceOrientationSample(
@@ -24,6 +29,7 @@ class AndroidDeviceOrientationService implements DeviceOrientationService {
               (values['magneticFieldStrengthMicroTesla']! as num).toDouble(),
           expectedFieldStrengthMicroTesla:
               (values['expectedFieldStrengthMicroTesla']! as num).toDouble(),
+          declinationDegrees: (values['declinationDegrees']! as num).toDouble(),
         );
       });
 }

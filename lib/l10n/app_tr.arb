@@ -31,6 +31,10 @@
   "maghribLabel": "Akşam",
   "ishaLabel": "Yatsı",
   "qiblaTitle": "Kıble",
+  "qiblaSectionTitle": "Kıble",
+  "qiblaNorthReferenceDescription": "Kıble yönünü cihaz pusulanla aynı kuzey referansında göster.",
+  "trueNorth": "Gerçek kuzey",
+  "magneticNorth": "Manyetik kuzey",
   "qiblaSubtitle": "Kâbe yönü",
   "qiblaDirectionStable": "Yön sabit",
   "kaabaLabel": "Kâbe",
@@ -42,6 +46,8 @@
   "qiblaBearingSemantics": "Kıble açısı {degrees} derece",
   "@qiblaBearingSemantics": {"placeholders": {"degrees": {"type": "int"}}},
   "settingsTitle": "Ayarlar",
+  "appVersionLabel": "Sürüm {version}",
+  "@appVersionLabel": {"placeholders": {"version": {"type": "String"}}},
   "calculationMethod": "Hesaplama yöntemi",
   "turkiyeCalculationApproximation": "Türkiye yöntemi (Diyanet yaklaşımı; resmi vakitlerle birebir aynı olduğu garanti edilmez).",
   "asrMethod": "İkindi hesabı",
@@ -57,6 +63,10 @@
   "prayerScheduleTitle": "Bugünün namaz vakitleri",
   "locationSectionTitle": "Konum",
   "adhanSectionTitle": "Ezan",
+  "playAdhan": "Ezan'ı çal",
+  "muteAdhan": "Sessize al",
+  "unmuteAdhan": "Sesi aç",
+  "adhanPlaybackFailed": "Ezan çalınamadı.",
   "volumeTitle": "Çalma düzeyi",
   "appearanceTitle": "Görünüm",
   "themeTitle": "Tema",
@@ -67,5 +77,6 @@
   "englishLanguage": "İngilizce",
   "turkishLanguage": "Türkçe",
   "aboutTitle": "Ezan hakkında",
-  "aboutDescription": "Çevrimdışı öncelikli namaz vakitleri ve kıble uygulaması."
+  "aboutDescription": "Çevrimdışı öncelikli namaz vakitleri ve kıble uygulaması.",
+  "updateNow": "Güncelle"
 }

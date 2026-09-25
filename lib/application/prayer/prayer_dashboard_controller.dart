@@ -40,7 +40,7 @@ final prayerDashboardProvider =
 class PrayerDashboardController extends AsyncNotifier<PrayerDashboardState> {
   @override
   Future<PrayerDashboardState> build() async {
-    TimeZoneDatabase.ensureInitialized();
+    await TimeZoneDatabase.ensureInitialized();
     final timeZoneId = await ref
         .read(timeZoneServiceProvider)
         .getLocalTimeZoneId();

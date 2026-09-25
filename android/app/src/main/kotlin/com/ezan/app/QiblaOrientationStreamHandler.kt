@@ -20,6 +20,7 @@ internal class QiblaOrientationStreamHandler(
     private var eventSink: EventChannel.EventSink? = null
     private var latitude = 0.0
     private var longitude = 0.0
+    private var useTrueNorth = true
     private var rotationAccuracy = SensorManager.SENSOR_STATUS_UNRELIABLE
     private var accelerometerAccuracy = SensorManager.SENSOR_STATUS_UNRELIABLE
     private var magnetometerAccuracy = SensorManager.SENSOR_STATUS_UNRELIABLE
@@ -34,6 +35,7 @@ internal class QiblaOrientationStreamHandler(
         val coordinates = arguments as? Map<*, *>
         latitude = (coordinates?.get("latitude") as? Number)?.toDouble() ?: 0.0
         longitude = (coordinates?.get("longitude") as? Number)?.toDouble() ?: 0.0
+        useTrueNorth = coordinates?.get("useTrueNorth") as? Boolean ?: true
         eventSink = events
         hasRotationVector = rotationSensor != null
 
@@ -137,7 +139,8 @@ internal class QiblaOrientationStreamHandler(
         }
         eventSink?.success(
             mapOf(
-                "azimuthDegrees" to trueAzimuth,
+                "azimuthDegrees" to if (useTrueNorth) trueAzimuth else magneticAzimuth,
+                "declinationDegrees" to fieldModel.declination.toDouble(),
                 "hasSensorAccuracy" to accuracyIsReliable,
                 "magneticFieldStrengthMicroTesla" to observedStrength,
                 "expectedFieldStrengthMicroTesla" to expectedStrength,

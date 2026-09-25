@@ -3,4 +3,6 @@ abstract interface class UiPreferences {
   Future<void> setThemeMode(String mode);
   Future<String?> getLocale();
   Future<void> setLocale(String? languageCode);
+  Future<String?> getQiblaNorthReference();
+  Future<void> setQiblaNorthReference(String reference);
 }

@@ -20,9 +20,12 @@ import java.util.Locale
 
 class AdhanPlaybackService : Service() {
     private lateinit var player: ExoPlayer
+    private var playbackPrayer: String? = null
+    private var isMuted = false
 
     override fun onCreate() {
         super.onCreate()
+        activeInstance = this
         createNotificationChannel()
         promoteToForeground(PLAYBACK_NOTIFICATION_ID, buildNotification())
         player = ExoPlayer.Builder(this).build().apply {
@@ -35,6 +38,14 @@ class AdhanPlaybackService : Service() {
             )
             volume = AdhanAudioPreferences.getVolume(this@AdhanPlaybackService)
             addListener(object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    AdhanPlaybackStateStreamHandler.update(
+                        isPlaying = isPlaying,
+                        prayer = playbackPrayer,
+                        isMuted = isMuted,
+                    )
+                }
+
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     if (playbackState == Player.STATE_ENDED) stopPlayback()
                 }
@@ -48,23 +59,31 @@ class AdhanPlaybackService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val assetId = intent?.getStringExtra("assetId")
-        if (intent?.action != ACTION_PLAY || assetId == null || assetId !in assetIds) {
+        val prayerCode = intent?.getStringExtra("prayer")
+        val prayer = prayerDisplayName(prayerCode)
+        if (
+            intent?.action != ACTION_PLAY ||
+            assetId == null ||
+            assetId !in assetIds ||
+            prayer == null
+        ) {
             stopPlayback(startId)
             return START_NOT_STICKY
         }
 
-        val prayer = prayerDisplayName(intent.getStringExtra("prayer"))
+        playbackPrayer = prayerCode
+        isMuted = false
+        player.volume = AdhanAudioPreferences.getVolume(this)
         promoteToForeground(PLAYBACK_NOTIFICATION_ID, buildNotification(prayer))
 
-        val resourceId = resources.getIdentifier("placeholder_chime", "raw", packageName)
-        if (resourceId == 0) {
-            // Production recordings are intentionally absent until licensed files are supplied.
-            stopPlayback(startId)
-            return START_NOT_STICKY
-        }
+        AdhanPlaybackStateStreamHandler.update(
+            isPlaying = false,
+            prayer = playbackPrayer,
+            isMuted = false,
+        )
 
         val mediaItem = MediaItem.Builder()
-            .setUri(Uri.parse("android.resource://$packageName/$resourceId"))
+            .setUri(Uri.parse("android.resource://$packageName/${R.raw.adhan}"))
             .setMediaMetadata(MediaMetadata.Builder().setTitle(prayer).build())
             .build()
         player.setMediaItem(mediaItem)
@@ -76,8 +95,28 @@ class AdhanPlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        AdhanPlaybackStateStreamHandler.reset()
+        if (activeInstance === this) activeInstance = null
         player.release()
         super.onDestroy()
+    }
+
+    internal fun setPlaybackMuted(muted: Boolean): Boolean {
+        if (!::player.isInitialized || !player.isPlaying) return false
+        isMuted = muted
+        player.volume = if (muted) 0f else AdhanAudioPreferences.getVolume(this)
+        AdhanPlaybackStateStreamHandler.update(
+            isPlaying = true,
+            prayer = playbackPrayer,
+            isMuted = isMuted,
+        )
+        return true
+    }
+
+    internal fun updateSavedVolume(volume: Float) {
+        if (::player.isInitialized && !isMuted) {
+            player.volume = volume.coerceIn(0f, 1f)
+        }
     }
 
     private fun stopPlayback(startId: Int? = null) {
@@ -85,6 +124,9 @@ class AdhanPlaybackService : Service() {
             player.stop()
             player.clearMediaItems()
         }
+        playbackPrayer = null
+        isMuted = false
+        AdhanPlaybackStateStreamHandler.reset()
         stopForeground(STOP_FOREGROUND_REMOVE)
         if (startId == null) stopSelf() else stopSelf(startId)
     }
@@ -154,7 +196,23 @@ class AdhanPlaybackService : Service() {
 
     companion object {
         const val ACTION_PLAY = "com.ezan.app.action.PLAY_ADHAN"
-        val assetIds = setOf("adhan_fajr", "adhan_dhuhr", "adhan_asr", "adhan_maghrib", "adhan_isha")
+        // Existing alarms can survive an app update with their earlier per-prayer IDs.
+        val assetIds = setOf(
+            "adhan",
+            "adhan_fajr",
+            "adhan_dhuhr",
+            "adhan_asr",
+            "adhan_maghrib",
+            "adhan_isha",
+        )
+        private var activeInstance: AdhanPlaybackService? = null
+
+        fun setActivePlaybackMuted(muted: Boolean): Boolean =
+            activeInstance?.setPlaybackMuted(muted) ?: false
+
+        fun updateActiveVolume(volume: Float) {
+            activeInstance?.updateSavedVolume(volume)
+        }
 
         private const val PLAYBACK_CHANNEL_ID = "adhan_playback"
         private const val PLAYBACK_NOTIFICATION_ID = 701

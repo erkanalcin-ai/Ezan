@@ -107,6 +107,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get qiblaTitle => 'Kıble';
 
   @override
+  String get qiblaSectionTitle => 'Kıble';
+
+  @override
+  String get qiblaNorthReferenceDescription =>
+      'Kıble yönünü cihaz pusulanla aynı kuzey referansında göster.';
+
+  @override
+  String get trueNorth => 'Gerçek kuzey';
+
+  @override
+  String get magneticNorth => 'Manyetik kuzey';
+
+  @override
   String get qiblaSubtitle => 'Kâbe yönü';
 
   @override
@@ -139,6 +152,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settingsTitle => 'Ayarlar';
+
+  @override
+  String appVersionLabel(String version) {
+    return 'Sürüm $version';
+  }
 
   @override
   String get calculationMethod => 'Hesaplama yöntemi';
@@ -190,6 +208,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get adhanSectionTitle => 'Ezan';
 
   @override
+  String get playAdhan => 'Ezan\'ı çal';
+
+  @override
+  String get muteAdhan => 'Sessize al';
+
+  @override
+  String get unmuteAdhan => 'Sesi aç';
+
+  @override
+  String get adhanPlaybackFailed => 'Ezan çalınamadı.';
+
+  @override
   String get volumeTitle => 'Çalma düzeyi';
 
   @override
@@ -222,4 +252,7 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get aboutDescription =>
       'Çevrimdışı öncelikli namaz vakitleri ve kıble uygulaması.';
+
+  @override
+  String get updateNow => 'Güncelle';
 }

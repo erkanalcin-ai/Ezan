@@ -107,6 +107,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qiblaTitle => 'Qibla';
 
   @override
+  String get qiblaSectionTitle => 'Qibla';
+
+  @override
+  String get qiblaNorthReferenceDescription =>
+      'Use the same north reference as your device compass for the Qibla direction.';
+
+  @override
+  String get trueNorth => 'True north';
+
+  @override
+  String get magneticNorth => 'Magnetic north';
+
+  @override
   String get qiblaSubtitle => 'Direction to the Kaaba';
 
   @override
@@ -140,6 +153,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsTitle => 'Settings';
+
+  @override
+  String appVersionLabel(String version) {
+    return 'Version $version';
+  }
 
   @override
   String get calculationMethod => 'Calculation method';
@@ -191,6 +209,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adhanSectionTitle => 'Adhan';
 
   @override
+  String get playAdhan => 'Play adhan';
+
+  @override
+  String get muteAdhan => 'Mute';
+
+  @override
+  String get unmuteAdhan => 'Turn sound on';
+
+  @override
+  String get adhanPlaybackFailed => 'The adhan could not be played.';
+
+  @override
   String get volumeTitle => 'Playback volume';
 
   @override
@@ -222,4 +252,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutDescription => 'An offline-first prayer times and Qibla app.';
+
+  @override
+  String get updateNow => 'Update';
 }

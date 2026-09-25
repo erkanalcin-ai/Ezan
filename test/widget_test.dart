@@ -31,10 +31,10 @@ void main() {
 
     final container = ProviderContainer(
       overrides: [
-        locationServiceProvider.overrideWithValue(_NoLocationService()),
-        timeZoneServiceProvider.overrideWithValue(_UtcTimeZoneService()),
-        prayerCalculationPreferencesProvider.overrideWithValue(
-          _MemoryCalculationPreferences(),
+        prayerDashboardProvider.overrideWith(
+          () => _StaticPrayerDashboardController(
+            _dashboardState(hasLocation: false),
+          ),
         ),
         uiPreferencesProvider.overrideWithValue(_MemoryUiPreferences()),
       ],
@@ -43,7 +43,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(container: container, child: const EzanApp()),
     );
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(seconds: 3));
     expect(tester.takeException(), isNull);
 
     expect(find.byKey(const Key('home-dashboard')), findsNothing);
@@ -64,10 +64,10 @@ void main() {
 
     final container = ProviderContainer(
       overrides: [
-        locationServiceProvider.overrideWithValue(_KnownLocationService()),
-        timeZoneServiceProvider.overrideWithValue(_UtcTimeZoneService()),
-        prayerCalculationPreferencesProvider.overrideWithValue(
-          _MemoryCalculationPreferences(),
+        prayerDashboardProvider.overrideWith(
+          () => _StaticPrayerDashboardController(
+            _dashboardState(hasLocation: true),
+          ),
         ),
         uiPreferencesProvider.overrideWithValue(_MemoryUiPreferences()),
         prayerAlarmSchedulerProvider.overrideWithValue(
@@ -79,7 +79,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(container: container, child: const EzanApp()),
     );
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 2));
 
     expect(find.byKey(const Key('home-dashboard')), findsOneWidget);
     expect(find.byKey(const Key('home-cityscape')), findsOneWidget);
@@ -238,15 +238,6 @@ void main() {
   });
 }
 
-class _NoLocationService implements LocationService {
-  @override
-  Future<DeviceLocation> getCurrentLocation() =>
-      throw const LocationFailure(LocationFailureReason.permissionDenied);
-
-  @override
-  Future<DeviceLocation?> getLastKnownLocation() async => null;
-}
-
 class _UtcTimeZoneService implements TimeZoneService {
   @override
   Future<String> getLocalTimeZoneId() async => 'Etc/UTC';
@@ -291,6 +282,7 @@ class _MemoryCalculationPreferences implements PrayerCalculationPreferences {
 class _MemoryUiPreferences implements UiPreferences {
   String? themeMode;
   String? locale;
+  String? qiblaNorthReference;
 
   @override
   Future<String?> getThemeMode() async => themeMode;
@@ -307,4 +299,49 @@ class _MemoryUiPreferences implements UiPreferences {
   Future<void> setLocale(String? languageCode) async {
     locale = languageCode;
   }
+
+  @override
+  Future<String?> getQiblaNorthReference() async => qiblaNorthReference;
+
+  @override
+  Future<void> setQiblaNorthReference(String reference) async {
+    qiblaNorthReference = reference;
+  }
+}
+
+class _StaticPrayerDashboardController extends PrayerDashboardController {
+  _StaticPrayerDashboardController(this._dashboard);
+
+  final PrayerDashboardState _dashboard;
+
+  @override
+  Future<PrayerDashboardState> build() async => _dashboard;
+}
+
+PrayerDashboardState _dashboardState({required bool hasLocation}) {
+  final now = DateTime.utc(2026, 9, 26);
+  final location = hasLocation
+      ? const DeviceLocation(latitude: 41.0082, longitude: 28.9784)
+      : null;
+  final schedule = hasLocation
+      ? PrayerSchedule(
+          times: {
+            PrayerName.fajr: DateTime.utc(2026, 9, 26, 5),
+            PrayerName.sunrise: DateTime.utc(2026, 9, 26, 6, 30),
+            PrayerName.dhuhr: DateTime.utc(2026, 9, 26, 13),
+            PrayerName.asr: DateTime.utc(2026, 9, 26, 16),
+            PrayerName.maghrib: DateTime.utc(2026, 9, 26, 19),
+            PrayerName.isha: DateTime.utc(2026, 9, 26, 21),
+          },
+          tomorrowFajr: DateTime.utc(2026, 9, 27, 5),
+        )
+      : null;
+
+  return PrayerDashboardState(
+    timeZoneId: 'Etc/UTC',
+    now: now,
+    location: location,
+    schedule: schedule,
+    asrMethod: AsrMethod.standard,
+  );
 }

@@ -8,18 +8,16 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('maps each adhan prayer to a distinct local slot', () {
-    expect(AdhanAudioCatalog.forPrayer(PrayerName.fajr).assetId, 'adhan_fajr');
-    expect(
-      AdhanAudioCatalog.forPrayer(PrayerName.dhuhr).assetId,
-      'adhan_dhuhr',
-    );
-    expect(AdhanAudioCatalog.forPrayer(PrayerName.asr).assetId, 'adhan_asr');
-    expect(
-      AdhanAudioCatalog.forPrayer(PrayerName.maghrib).assetId,
-      'adhan_maghrib',
-    );
-    expect(AdhanAudioCatalog.forPrayer(PrayerName.isha).assetId, 'adhan_isha');
+  test('uses the installed adhan recording for every prayer', () {
+    for (final prayer in [
+      PrayerName.fajr,
+      PrayerName.dhuhr,
+      PrayerName.asr,
+      PrayerName.maghrib,
+      PrayerName.isha,
+    ]) {
+      expect(AdhanAudioCatalog.forPrayer(prayer).assetId, 'adhan');
+    }
     expect(
       () => AdhanAudioCatalog.forPrayer(PrayerName.sunrise),
       throwsArgumentError,

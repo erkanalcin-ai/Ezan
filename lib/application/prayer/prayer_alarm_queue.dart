@@ -51,14 +51,7 @@ Future<List<PrayerAlarmEvent>> buildPrayerAlarmQueue({
       events.add(
         PrayerAlarmEvent(
           timestamp: time.millisecondsSinceEpoch,
-          assetId: switch (prayer) {
-            PrayerName.fajr => 'adhan_fajr',
-            PrayerName.dhuhr => 'adhan_dhuhr',
-            PrayerName.asr => 'adhan_asr',
-            PrayerName.maghrib => 'adhan_maghrib',
-            PrayerName.isha => 'adhan_isha',
-            PrayerName.sunrise => throw StateError('Sunrise has no adhan.'),
-          },
+          assetId: 'adhan',
           prayer: prayer.name,
         ),
       );

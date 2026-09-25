@@ -14,6 +14,7 @@ abstract interface class DeviceOrientationService {
   Stream<DeviceOrientationSample> orientations({
     required double latitude,
     required double longitude,
+    required bool useTrueNorth,
   });
 }
 
@@ -23,23 +24,26 @@ class DeviceOrientationSample {
     required this.hasSensorAccuracy,
     required this.magneticFieldStrengthMicroTesla,
     required this.expectedFieldStrengthMicroTesla,
+    this.declinationDegrees = 0,
   });
 
-  /// Heading corrected to true north using the local geomagnetic declination.
   final double azimuthDegrees;
   final bool hasSensorAccuracy;
   final double magneticFieldStrengthMicroTesla;
   final double expectedFieldStrengthMicroTesla;
+  final double declinationDegrees;
 }
 
 class DeviceOrientation {
   const DeviceOrientation({
     required this.azimuthDegrees,
     required this.isReliable,
+    this.declinationDegrees = 0,
   });
 
   final double azimuthDegrees;
   final bool isReliable;
+  final double declinationDegrees;
 }
 
 class QiblaBearingCalculator implements QiblaService {
@@ -101,6 +105,7 @@ class QiblaOrientationFilter {
     return DeviceOrientation(
       azimuthDegrees: mean,
       isReliable: sample.hasSensorAccuracy && fieldIsPlausible && isStable,
+      declinationDegrees: sample.declinationDegrees,
     );
   }
 

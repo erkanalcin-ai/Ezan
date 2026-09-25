@@ -3,6 +3,11 @@ package com.ezan.app
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -14,13 +19,62 @@ class MainActivity : FlutterActivity() {
     private var qiblaOrientationStream: QiblaOrientationStreamHandler? = null
     private var localAdhanPlayer: LocalAdhanPlayer? = null
     private var adhanPlaybackChannel: MethodChannel? = null
+    private var adhanPlaybackStateChannel: EventChannel? = null
     private var prayerAlarmChannel: MethodChannel? = null
     private var prayerCalculationSettingsChannel: MethodChannel? = null
     private var uiPreferencesChannel: MethodChannel? = null
     private var privacyPolicyChannel: MethodChannel? = null
+    private var playUpdateChannel: MethodChannel? = null
+    private lateinit var playUpdateManager: AppUpdateManager
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        playUpdateManager = AppUpdateManagerFactory.create(this)
+        playUpdateChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.ezan.app/play_updates",
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "checkForUpdate" -> playUpdateManager.appUpdateInfo
+                        .addOnSuccessListener { info ->
+                            val updateAvailable =
+                                info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
+                                    info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE) ||
+                                    info.updateAvailability() ==
+                                    UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
+                            result.success(updateAvailable)
+                        }
+                        .addOnFailureListener { result.success(false) }
+                    "startImmediateUpdate" -> playUpdateManager.appUpdateInfo
+                        .addOnSuccessListener { info ->
+                            val canResume = info.updateAvailability() ==
+                                UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
+                            val canStart = info.updateAvailability() ==
+                                UpdateAvailability.UPDATE_AVAILABLE &&
+                                info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
+                            if (!canResume && !canStart) {
+                                result.success(false)
+                            } else {
+                                try {
+                                    val started = playUpdateManager.startUpdateFlowForResult(
+                                        info,
+                                        this,
+                                        AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE)
+                                            .build(),
+                                        PLAY_UPDATE_REQUEST_CODE,
+                                    )
+                                    result.success(started)
+                                } catch (_: Exception) {
+                                    result.success(false)
+                                }
+                            }
+                        }
+                        .addOnFailureListener { result.success(false) }
+                    else -> result.notImplemented()
+                }
+            }
+        }
         privacyPolicyChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.ezan.app/privacy_policy",
@@ -52,6 +106,12 @@ class MainActivity : FlutterActivity() {
                 flutterEngine.dartExecutor.binaryMessenger,
                 "com.ezan.app/qibla/orientation",
             ).setStreamHandler(handler)
+        }
+        adhanPlaybackStateChannel = EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.ezan.app/adhan_playback_state",
+        ).also { channel ->
+            channel.setStreamHandler(AdhanPlaybackStateStreamHandler)
         }
         adhanPlaybackChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -99,7 +159,20 @@ class MainActivity : FlutterActivity() {
                         } else {
                             AdhanAudioPreferences.setVolume(this, volume.toFloat())
                             localAdhanPlayer?.setVolume(volume.toFloat())
+                            AdhanPlaybackService.updateActiveVolume(volume.toFloat())
                             result.success(null)
+                        }
+                    }
+                    "setPlaybackMuted" -> {
+                        val muted = call.argument<Boolean>("muted")
+                        if (muted == null) {
+                            result.error("INVALID_MUTE_STATE", "A mute state is required.", null)
+                        } else {
+                            val scheduledPlaybackMuted =
+                                AdhanPlaybackService.setActivePlaybackMuted(muted)
+                            val localPlaybackMuted =
+                                localAdhanPlayer?.setPlaybackMuted(muted) ?: false
+                            result.success(scheduledPlaybackMuted || localPlaybackMuted)
                         }
                     }
                     else -> result.notImplemented()
@@ -196,6 +269,21 @@ class MainActivity : FlutterActivity() {
                             result.success(null)
                         }
                     }
+                    "getQiblaNorthReference" ->
+                        result.success(UiPreferences.getQiblaNorthReference(this))
+                    "setQiblaNorthReference" -> {
+                        val reference = call.argument<String>("reference")
+                        if (reference !in setOf("true", "magnetic")) {
+                            result.error(
+                                "INVALID_QIBLA_NORTH_REFERENCE",
+                                "Qibla north reference is invalid.",
+                                null,
+                            )
+                        } else {
+                            UiPreferences.setQiblaNorthReference(this, reference!!)
+                            result.success(null)
+                        }
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -207,6 +295,8 @@ class MainActivity : FlutterActivity() {
         qiblaOrientationStream = null
         localAdhanPlayer?.release()
         localAdhanPlayer = null
+        adhanPlaybackStateChannel?.setStreamHandler(null)
+        adhanPlaybackStateChannel = null
         adhanPlaybackChannel?.setMethodCallHandler(null)
         adhanPlaybackChannel = null
         prayerAlarmChannel?.setMethodCallHandler(null)
@@ -217,10 +307,13 @@ class MainActivity : FlutterActivity() {
         uiPreferencesChannel = null
         privacyPolicyChannel?.setMethodCallHandler(null)
         privacyPolicyChannel = null
+        playUpdateChannel?.setMethodCallHandler(null)
+        playUpdateChannel = null
         super.onDestroy()
     }
 
     private companion object {
+        const val PLAY_UPDATE_REQUEST_CODE = 5305
         const val PRIVACY_POLICY_URL =
             "https://erkanalcin-ai.github.io/Ezan/privacy-policy.html"
     }

@@ -9,20 +9,16 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 
-/** Foreground local playback for preview/testing; Phase 5 supplies scheduled playback. */
+/** Local playback for preview/testing; scheduled playback runs in AdhanPlaybackService. */
 internal class LocalAdhanPlayer(private val context: Context) {
     private var player: ExoPlayer? = null
     private var readinessListener: Player.Listener? = null
     private var readinessCallback: ((Throwable?) -> Unit)? = null
+    private var isMuted = false
 
     fun play(assetId: String, onReady: (Throwable?) -> Unit) {
         require(assetId in adhanSlots) { "Unknown local adhan slot." }
-        val placeholderResource = context.resources.getIdentifier(
-            "placeholder_chime",
-            "raw",
-            context.packageName,
-        )
-        check(placeholderResource != 0) { "Licensed local adhan audio is not installed." }
+        val adhanResource = R.raw.adhan
 
         val currentPlayer = player ?: ExoPlayer.Builder(context).build().also { created ->
             created.setAudioAttributes(
@@ -36,6 +32,8 @@ internal class LocalAdhanPlayer(private val context: Context) {
             player = created
         }
 
+        isMuted = false
+        currentPlayer.volume = AdhanAudioPreferences.getVolume(context)
         cancelPendingPlayback(IllegalStateException("Playback was replaced."))
         val listener = object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -53,7 +51,7 @@ internal class LocalAdhanPlayer(private val context: Context) {
         currentPlayer.addListener(listener)
         currentPlayer.setMediaItem(
             MediaItem.fromUri(
-                Uri.parse("android.resource://${context.packageName}/$placeholderResource"),
+                Uri.parse("android.resource://${context.packageName}/$adhanResource"),
             ),
         )
         currentPlayer.prepare()
@@ -61,7 +59,15 @@ internal class LocalAdhanPlayer(private val context: Context) {
     }
 
     fun setVolume(volume: Float) {
-        player?.volume = volume.coerceIn(0f, 1f)
+        if (!isMuted) player?.volume = volume.coerceIn(0f, 1f)
+    }
+
+    fun setPlaybackMuted(muted: Boolean): Boolean {
+        val currentPlayer = player ?: return false
+        if (!currentPlayer.isPlaying) return false
+        isMuted = muted
+        currentPlayer.volume = if (muted) 0f else AdhanAudioPreferences.getVolume(context)
+        return true
     }
 
     fun stop() {
@@ -70,6 +76,7 @@ internal class LocalAdhanPlayer(private val context: Context) {
             stop()
             clearMediaItems()
         }
+        isMuted = false
     }
 
     fun release() {
@@ -92,6 +99,6 @@ internal class LocalAdhanPlayer(private val context: Context) {
     }
 
     private companion object {
-        val adhanSlots = setOf("adhan_fajr", "adhan_dhuhr", "adhan_asr", "adhan_maghrib", "adhan_isha")
+        val adhanSlots = setOf("adhan")
     }
 }

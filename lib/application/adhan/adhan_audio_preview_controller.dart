@@ -19,7 +19,24 @@ final adhanAudioPreviewProvider =
       AdhanAudioPreviewController.new,
     );
 
+final adhanPlaybackStatusProvider =
+    StreamProvider.autoDispose<AdhanPlaybackStatus>(
+      (ref) => ref.read(adhanPlaybackServiceProvider).watchPlaybackStatus(),
+    );
+
+final adhanManualPlaybackMutedProvider =
+    NotifierProvider<AdhanManualPlaybackMuteController, bool>(
+      AdhanManualPlaybackMuteController.new,
+    );
+
 enum AdhanAudioPreviewStatus { stopped, playing, failed }
+
+class AdhanManualPlaybackMuteController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setMuted(bool muted) => state = muted;
+}
 
 class AdhanVolumeController extends AsyncNotifier<double> {
   @override
@@ -41,6 +58,7 @@ class AdhanAudioPreviewController extends Notifier<AdhanAudioPreviewStatus> {
       await ref
           .read(adhanPlaybackServiceProvider)
           .play(AdhanAudioCatalog.forPrayer(PrayerName.fajr));
+      ref.read(adhanManualPlaybackMutedProvider.notifier).setMuted(false);
       state = AdhanAudioPreviewStatus.playing;
     } catch (_) {
       state = AdhanAudioPreviewStatus.failed;
@@ -50,6 +68,7 @@ class AdhanAudioPreviewController extends Notifier<AdhanAudioPreviewStatus> {
   Future<void> stop() async {
     try {
       await ref.read(adhanPlaybackServiceProvider).stop();
+      ref.read(adhanManualPlaybackMutedProvider.notifier).setMuted(false);
       state = AdhanAudioPreviewStatus.stopped;
     } catch (_) {
       state = AdhanAudioPreviewStatus.failed;

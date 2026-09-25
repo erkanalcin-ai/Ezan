@@ -71,6 +71,7 @@ android {
 }
 
 dependencies {
+    implementation("com.google.android.play:app-update:2.1.0")
     implementation("androidx.media3:media3-exoplayer:1.11.1")
 }
 

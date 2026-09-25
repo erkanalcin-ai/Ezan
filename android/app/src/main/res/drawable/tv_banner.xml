@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:width="320dp" android:height="180dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/ezan_icon_background" />
+        </shape>
+    </item>
+    <item
+        android:width="120dp"
+        android:height="120dp"
+        android:drawable="@mipmap/ezan_launcher_foreground"
+        android:gravity="center" />
+</layer-list>

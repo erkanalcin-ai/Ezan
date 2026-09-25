@@ -4,13 +4,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../application/adhan/adhan_audio_catalog.dart';
 import '../../application/adhan/adhan_audio_preview_controller.dart';
 import '../../application/prayer/prayer_alarm_settings_controller.dart';
 import '../../application/prayer/prayer_dashboard_controller.dart';
+import '../../application/qibla/qibla_providers.dart';
 import '../../application/theme/theme_mode_notifier.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/prayer/prayer_calculation_service.dart';
+import '../../domain/qibla/qibla_north_reference.dart';
 import '../../l10n/generated/app_localizations.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -23,9 +27,47 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  late final Future<PackageInfo> _packageInfo = PackageInfo.fromPlatform();
+  bool _isStartingAdhan = false;
+
   static const _privacyPolicyChannel = MethodChannel(
     'com.ezan.app/privacy_policy',
   );
+
+  Future<void> _playAdhan() async {
+    setState(() => _isStartingAdhan = true);
+    try {
+      await ref
+          .read(adhanPlaybackServiceProvider)
+          .play(AdhanAudioCatalog.forPrayer(PrayerName.fajr));
+      if (mounted) {
+        ref.read(adhanManualPlaybackMutedProvider.notifier).setMuted(false);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.adhanPlaybackFailed),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isStartingAdhan = false);
+    }
+  }
+
+  Future<void> _toggleAdhanMute(
+    bool isMuted, {
+    required bool scheduledPlayback,
+  }) async {
+    final nextMuted = !isMuted;
+    final changed = await ref
+        .read(adhanPlaybackServiceProvider)
+        .setPlaybackMuted(nextMuted);
+    if (changed && mounted && !scheduledPlayback) {
+      ref.read(adhanManualPlaybackMutedProvider.notifier).setMuted(nextMuted);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +77,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final volume = ref.watch(adhanVolumeProvider);
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
+    final qiblaNorthReference = ref.watch(qiblaNorthReferenceProvider);
+    final manualPlaybackMuted = ref.watch(adhanManualPlaybackMutedProvider);
+    final playbackStatus = ref.watch(adhanPlaybackStatusProvider).asData?.value;
+    final scheduledPlayback = playbackStatus?.isPlaying ?? false;
+    final isMuted = scheduledPlayback
+        ? playbackStatus!.isMuted
+        : manualPlaybackMuted;
     final selected = dashboard?.asrMethod ?? AsrMethod.standard;
     final previewStatus = kDebugMode
         ? ref.watch(adhanAudioPreviewProvider)
@@ -105,6 +154,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             )
                           : const Icon(Icons.refresh_rounded),
                     ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                _SettingsSectionTitle(title: l10n.qiblaSectionTitle),
+                _SettingsGroup(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.qiblaNorthReferenceDescription,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      RadioGroup<QiblaNorthReference>(
+                        groupValue: qiblaNorthReference,
+                        onChanged: (reference) {
+                          if (reference != null) {
+                            ref
+                                .read(qiblaNorthReferenceProvider.notifier)
+                                .setReference(reference);
+                          }
+                        },
+                        child: Column(
+                          children: [
+                            RadioListTile<QiblaNorthReference>(
+                              visualDensity: VisualDensity.compact,
+                              contentPadding: EdgeInsets.zero,
+                              value: QiblaNorthReference.trueNorth,
+                              title: Text(l10n.trueNorth),
+                            ),
+                            RadioListTile<QiblaNorthReference>(
+                              visualDensity: VisualDensity.compact,
+                              contentPadding: EdgeInsets.zero,
+                              value: QiblaNorthReference.magneticNorth,
+                              title: Text(l10n.magneticNorth),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
@@ -216,6 +307,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                           .read(adhanVolumeProvider.notifier)
                                           .setVolume(value),
                                     ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const _PanelDivider(),
+                      Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            FilledButton.icon(
+                              key: const Key('settings-play-adhan'),
+                              onPressed: _isStartingAdhan || scheduledPlayback
+                                  ? null
+                                  : _playAdhan,
+                              icon: _isStartingAdhan
+                                  ? const SizedBox.square(
+                                      dimension: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.play_arrow_rounded),
+                              label: Text(l10n.playAdhan),
+                            ),
+                            OutlinedButton.icon(
+                              key: const Key('settings-mute-adhan'),
+                              onPressed: () => _toggleAdhanMute(
+                                isMuted,
+                                scheduledPlayback: scheduledPlayback,
+                              ),
+                              icon: Icon(
+                                isMuted
+                                    ? Icons.volume_up_rounded
+                                    : Icons.volume_off_rounded,
+                              ),
+                              label: Text(
+                                isMuted ? l10n.unmuteAdhan : l10n.muteAdhan,
+                              ),
                             ),
                           ],
                         ),
@@ -380,10 +511,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           : 'Privacy Policy',
                     ),
                     trailing: const Icon(Icons.open_in_new_rounded),
-                    onTap: () => _privacyPolicyChannel.invokeMethod<void>(
-                      'open',
-                    ),
+                    onTap: () =>
+                        _privacyPolicyChannel.invokeMethod<void>('open'),
                   ),
+                ),
+                FutureBuilder<PackageInfo>(
+                  future: _packageInfo,
+                  builder: (context, snapshot) {
+                    final version = snapshot.data?.version;
+                    if (version == null || version.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.md),
+                      child: Center(
+                        child: Text(
+                          l10n.appVersionLabel(version),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

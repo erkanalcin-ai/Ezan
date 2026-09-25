@@ -23,4 +23,12 @@ class MethodChannelUiPreferences implements UiPreferences {
   @override
   Future<void> setLocale(String? languageCode) =>
       channel.invokeMethod<void>('setLocale', {'languageCode': languageCode});
+
+  @override
+  Future<String?> getQiblaNorthReference() =>
+      channel.invokeMethod<String>('getQiblaNorthReference');
+
+  @override
+  Future<void> setQiblaNorthReference(String reference) => channel
+      .invokeMethod<void>('setQiblaNorthReference', {'reference': reference});
 }

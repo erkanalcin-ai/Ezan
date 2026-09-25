@@ -31,6 +31,10 @@
   "maghribLabel": "Maghrib",
   "ishaLabel": "Isha",
   "qiblaTitle": "Qibla",
+  "qiblaSectionTitle": "Qibla",
+  "qiblaNorthReferenceDescription": "Use the same north reference as your device compass for the Qibla direction.",
+  "trueNorth": "True north",
+  "magneticNorth": "Magnetic north",
   "qiblaSubtitle": "Direction to the Kaaba",
   "qiblaDirectionStable": "Direction steady",
   "kaabaLabel": "Kaaba",
@@ -42,6 +46,8 @@
   "qiblaBearingSemantics": "Qibla bearing {degrees} degrees",
   "@qiblaBearingSemantics": {"placeholders": {"degrees": {"type": "int"}}},
   "settingsTitle": "Settings",
+  "appVersionLabel": "Version {version}",
+  "@appVersionLabel": {"placeholders": {"version": {"type": "String"}}},
   "calculationMethod": "Calculation method",
   "turkiyeCalculationApproximation": "Türkiye method (Diyanet approximation; exact agreement with official times is not guaranteed).",
   "asrMethod": "Asr method",
@@ -57,6 +63,10 @@
   "prayerScheduleTitle": "Today's prayer times",
   "locationSectionTitle": "Location",
   "adhanSectionTitle": "Adhan",
+  "playAdhan": "Play adhan",
+  "muteAdhan": "Mute",
+  "unmuteAdhan": "Turn sound on",
+  "adhanPlaybackFailed": "The adhan could not be played.",
   "volumeTitle": "Playback volume",
   "appearanceTitle": "Appearance",
   "themeTitle": "Theme",
@@ -67,5 +77,6 @@
   "englishLanguage": "English",
   "turkishLanguage": "Turkish",
   "aboutTitle": "About Ezan",
-  "aboutDescription": "An offline-first prayer times and Qibla app."
+  "aboutDescription": "An offline-first prayer times and Qibla app.",
+  "updateNow": "Update"
 }
