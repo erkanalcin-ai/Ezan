@@ -11,6 +11,7 @@ import '../../infrastructure/location/device_time_zone_service.dart';
 import '../../infrastructure/location/geolocator_location_service.dart';
 import '../../infrastructure/prayer/adhan_prayer_calculation_service.dart';
 import '../../infrastructure/prayer/method_channel_prayer_calculation_preferences.dart';
+import '../../infrastructure/prayer/method_channel_prayer_widget_bridge.dart';
 import '../../infrastructure/time/time_zone_database.dart';
 import 'prayer_alarm_queue.dart';
 import 'prayer_alarm_settings_controller.dart';
@@ -32,12 +33,18 @@ final prayerCalculationPreferencesProvider =
       (ref) => const MethodChannelPrayerCalculationPreferences(),
     );
 
+final prayerWidgetBridgeProvider = Provider<MethodChannelPrayerWidgetBridge>(
+  (ref) => const MethodChannelPrayerWidgetBridge(),
+);
+
 final prayerDashboardProvider =
     AsyncNotifierProvider<PrayerDashboardController, PrayerDashboardState>(
       PrayerDashboardController.new,
     );
 
 class PrayerDashboardController extends AsyncNotifier<PrayerDashboardState> {
+  bool _widgetScheduleSynced = false;
+
   @override
   Future<PrayerDashboardState> build() async {
     await TimeZoneDatabase.ensureInitialized();
@@ -159,20 +166,71 @@ class PrayerDashboardController extends AsyncNotifier<PrayerDashboardState> {
       timeZoneId: timeZoneId,
     );
     state = AsyncData(updated);
-    if (dateChanged || zoneChanged) await _syncAlarmSchedule(updated);
+    if (dateChanged || zoneChanged) {
+      await _syncAlarmSchedule(updated);
+    } else {
+      var widgetScheduleNeeded = false;
+      try {
+        widgetScheduleNeeded = await ref
+            .read(prayerWidgetBridgeProvider)
+            .shouldSync();
+      } catch (_) {
+        // The widget bridge is Android-only and unavailable in Dart tests.
+      }
+      if (!widgetScheduleNeeded) _widgetScheduleSynced = false;
+      if (widgetScheduleNeeded && !_widgetScheduleSynced) {
+        await _syncAlarmSchedule(updated);
+      }
+    }
   }
 
   Future<void> _syncAlarmSchedule(PrayerDashboardState dashboard) async {
+    final scheduler = ref.read(prayerAlarmSchedulerProvider);
+    final widgetBridge = ref.read(prayerWidgetBridgeProvider);
+    var alarmsEnabled = false;
+    var widgetScheduleNeeded = false;
     try {
-      final scheduler = ref.read(prayerAlarmSchedulerProvider);
-      if (!(await scheduler.getStatus()).enabled) return;
-      final location = dashboard.location;
-      final currentSchedule = dashboard.schedule;
-      if (location == null || currentSchedule == null) {
-        await scheduler.replaceSchedule(const []);
-        return;
-      }
+      alarmsEnabled = (await scheduler.getStatus()).enabled;
+    } catch (_) {
+      // Keep widget synchronization independent from optional alarm access.
+    }
+    try {
+      widgetScheduleNeeded = await widgetBridge.shouldSync();
+    } catch (_) {
+      // The widget bridge is Android-only and is unavailable in Dart tests.
+    }
+    if (!alarmsEnabled && !widgetScheduleNeeded) return;
+    if (!widgetScheduleNeeded) _widgetScheduleSynced = false;
 
+    final location = dashboard.location;
+    final currentSchedule = dashboard.schedule;
+    if (location == null) {
+      // Keep the last valid native schedule if Android has no cached position
+      // after process restart. It remains useful until a fresh fix is available.
+      _widgetScheduleSynced = widgetScheduleNeeded;
+      return;
+    }
+    if (currentSchedule == null) {
+      if (widgetScheduleNeeded) {
+        try {
+          await widgetBridge.clearSchedule();
+          _widgetScheduleSynced = true;
+        } catch (_) {
+          _widgetScheduleSynced = false;
+          // Keep prayer calculations usable when the native widget is unavailable.
+        }
+      }
+      if (alarmsEnabled) {
+        try {
+          await scheduler.replaceSchedule(const []);
+        } catch (_) {
+          // Alarm synchronization is retried from the next app refresh.
+        }
+      }
+      return;
+    }
+
+    try {
       final zone = tz.getLocation(dashboard.timeZoneId);
       final now = tz.TZDateTime.now(zone);
       final events = await buildPrayerAlarmQueue(
@@ -183,9 +241,18 @@ class PrayerDashboardController extends AsyncNotifier<PrayerDashboardState> {
         timeZoneId: dashboard.timeZoneId,
         asrMethod: dashboard.asrMethod,
       );
-      await scheduler.replaceSchedule(events);
+      if (widgetScheduleNeeded) {
+        try {
+          await widgetBridge.replaceSchedule(events);
+          _widgetScheduleSynced = true;
+        } catch (_) {
+          _widgetScheduleSynced = false;
+          // The app widget is optional and must not break the prayer screen.
+        }
+      }
+      if (alarmsEnabled) await scheduler.replaceSchedule(events);
     } catch (_) {
-      // A platform channel can be unavailable in tests or during a platform failure.
+      // A platform-channel or calculation failure is retried on the next refresh.
     }
   }
 

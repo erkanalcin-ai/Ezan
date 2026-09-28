@@ -175,24 +175,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get hanafiAsr => 'Hanefi';
 
   @override
-  String get placeholderAudioNotice =>
-      'Yalnızca geliştirme testi: geçici, sözsüz ses. Gerçek ezan kaydı değildir.';
-
-  @override
-  String get playPlaceholderAudio => 'Test sesini çal';
-
-  @override
-  String get stopAudio => 'Durdur';
-
-  @override
-  String get audioPlaybackFailed => 'Yerel test sesi çalınamadı.';
-
-  @override
   String get adhanAlarmTitle => 'Otomatik ezan';
 
   @override
   String get adhanAlarmDescription =>
       'Namaz vakitleri için yerel alarmları planla. Kesin alarm izni Android tarafından yönetilir ve sistem ayarlarından değiştirilebilir.';
+
+  @override
+  String get lockScreenPrayerStatusTitle => 'Kilit ekranında namaz vakti';
+
+  @override
+  String get lockScreenPrayerStatusDescription =>
+      'Sıradaki namazı ve geri sayımı göster. Ezan okunurken simgeye dokunarak sesi kıs.';
+
+  @override
+  String get notificationPermissionRequired =>
+      'Kilit ekranı durumunu göstermek için Ezan bildirim iznini aç.';
 
   @override
   String get exactAlarmPermissionNeeded =>

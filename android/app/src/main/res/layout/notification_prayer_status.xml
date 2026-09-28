@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/notification_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/widget_surface_dark"
+    android:gravity="center_vertical"
+    android:minHeight="76dp"
+    android:orientation="horizontal"
+    android:paddingStart="14dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="14dp"
+    android:paddingBottom="10dp">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/notification_brand"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:letterSpacing="0.16"
+            android:text="EZAN"
+            android:textColor="#D2AE5B"
+            android:textSize="9sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/notification_prayer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="sans"
+            android:maxLines="1"
+            android:text="İKİNDİ"
+            android:textColor="#F4F0E1"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Chronometer
+                android:id="@+id/notification_countdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans"
+                android:format="%s"
+                android:includeFontPadding="false"
+                android:textColor="#F4F0E1"
+                android:textSize="22sp"
+                android:textStyle="normal" />
+
+            <TextView
+                android:id="@+id/notification_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:fontFamily="sans"
+                android:maxLines="1"
+                android:text="Sonraki namaza kalan süre"
+                android:textColor="#C5BFAE"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/notification_speaker_button"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="10dp"
+        android:background="@drawable/notification_action_dark"
+        android:contentDescription="Mute adhan"
+        android:padding="9dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_speaker_mute"
+        android:visibility="gone" />
+</LinearLayout>

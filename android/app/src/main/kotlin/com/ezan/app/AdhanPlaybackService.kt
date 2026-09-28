@@ -1,8 +1,6 @@
 package com.ezan.app
 
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -26,7 +24,6 @@ class AdhanPlaybackService : Service() {
     override fun onCreate() {
         super.onCreate()
         activeInstance = this
-        createNotificationChannel()
         promoteToForeground(PLAYBACK_NOTIFICATION_ID, buildNotification())
         player = ExoPlayer.Builder(this).build().apply {
             setAudioAttributes(
@@ -59,8 +56,10 @@ class AdhanPlaybackService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val assetId = intent?.getStringExtra("assetId")
-        val prayerCode = intent?.getStringExtra("prayer")
-        val prayer = prayerDisplayName(prayerCode)
+        val prayerCode = intent?.getStringExtra("prayer")?.lowercase(Locale.ROOT)
+        val prayer = prayerCode?.let {
+            PrayerWidgetAppearance.prayerLabel(this, it).takeIf(String::isNotBlank)
+        }
         if (
             intent?.action != ACTION_PLAY ||
             assetId == null ||
@@ -73,8 +72,9 @@ class AdhanPlaybackService : Service() {
 
         playbackPrayer = prayerCode
         isMuted = false
+        PrayerStatusNotification.cancelStatus(this)
         player.volume = AdhanAudioPreferences.getVolume(this)
-        promoteToForeground(PLAYBACK_NOTIFICATION_ID, buildNotification(prayer))
+        promoteToForeground(PLAYBACK_NOTIFICATION_ID, buildNotification())
 
         AdhanPlaybackStateStreamHandler.update(
             isPlaying = false,
@@ -99,17 +99,19 @@ class AdhanPlaybackService : Service() {
         if (activeInstance === this) activeInstance = null
         player.release()
         super.onDestroy()
+        PrayerStatusNotification.refresh(this)
     }
 
     internal fun setPlaybackMuted(muted: Boolean): Boolean {
-        if (!::player.isInitialized || !player.isPlaying) return false
+        if (!::player.isInitialized || playbackPrayer == null) return false
         isMuted = muted
         player.volume = if (muted) 0f else AdhanAudioPreferences.getVolume(this)
         AdhanPlaybackStateStreamHandler.update(
-            isPlaying = true,
+            isPlaying = player.isPlaying,
             prayer = playbackPrayer,
             isMuted = isMuted,
         )
+        promoteToForeground(PLAYBACK_NOTIFICATION_ID, buildNotification())
         return true
     }
 
@@ -128,59 +130,12 @@ class AdhanPlaybackService : Service() {
         isMuted = false
         AdhanPlaybackStateStreamHandler.reset()
         stopForeground(STOP_FOREGROUND_REMOVE)
+        PrayerStatusNotification.refresh(this)
         if (startId == null) stopSelf() else stopSelf(startId)
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val manager = getSystemService(NotificationManager::class.java)
-        if (manager.getNotificationChannel(PLAYBACK_CHANNEL_ID) == null) {
-            manager.createNotificationChannel(
-                NotificationChannel(
-                    PLAYBACK_CHANNEL_ID,
-                    getString(R.string.playback_notification_channel_name),
-                    NotificationManager.IMPORTANCE_LOW,
-                ).apply {
-                    description = getString(R.string.playback_notification_channel_description)
-                    setSound(null, null)
-                    enableVibration(false)
-                },
-            )
-        }
-    }
-
-    private fun buildNotification(prayer: String? = null): Notification {
-        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Notification.Builder(this, PLAYBACK_CHANNEL_ID)
-        } else {
-            Notification.Builder(this)
-        }
-        return builder
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(getString(R.string.playback_notification_title))
-            .setContentText(
-                prayer?.let { getString(R.string.playback_notification_text, it) }
-                    ?: getString(R.string.playback_notification_text_default),
-            )
-            .setCategory(Notification.CATEGORY_SERVICE)
-            .setVisibility(Notification.VISIBILITY_PRIVATE)
-            .setOnlyAlertOnce(true)
-            .setOngoing(true)
-            .setShowWhen(false)
-            .build()
-    }
-
-    private fun prayerDisplayName(prayer: String?): String? {
-        val label = when (prayer?.lowercase(Locale.ROOT)) {
-            "fajr" -> R.string.prayer_fajr
-            "dhuhr" -> R.string.prayer_dhuhr
-            "asr" -> R.string.prayer_asr
-            "maghrib" -> R.string.prayer_maghrib
-            "isha" -> R.string.prayer_isha
-            else -> return null
-        }
-        return getString(label)
-    }
+    private fun buildNotification(): Notification =
+        PrayerStatusNotification.buildForeground(this, playbackPrayer, isMuted)
 
     private fun promoteToForeground(notificationId: Int, notification: Notification) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -214,7 +169,14 @@ class AdhanPlaybackService : Service() {
             activeInstance?.updateSavedVolume(volume)
         }
 
-        private const val PLAYBACK_CHANNEL_ID = "adhan_playback"
+        fun refreshActiveNotification(): Boolean {
+            val service = activeInstance ?: return false
+            if (service.playbackPrayer == null) return false
+            service.promoteToForeground(PLAYBACK_NOTIFICATION_ID, service.buildNotification())
+            return true
+        }
+
+        const val PLAYBACK_CHANNEL_ID = "adhan_playback_v2"
         private const val PLAYBACK_NOTIFICATION_ID = 701
     }
 }

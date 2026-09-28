@@ -9,4 +9,16 @@
     <string name="prayer_asr">İkindi</string>
     <string name="prayer_maghrib">Akşam</string>
     <string name="prayer_isha">Yatsı</string>
+    <string name="widget_brand">EZAN</string>
+    <string name="widget_prayer_status_title">Namaz vakitleri</string>
+    <string name="widget_countdown_subtitle">Sonraki namaza kalan süre</string>
+    <string name="widget_location_required">Konum eklemek için Ezan uygulamasını aç.</string>
+    <string name="widget_refresh_required">Vakitleri yenilemek için Ezan uygulamasını aç.</string>
+    <string name="widget_description">Sıradaki namaz ve canlı geri sayım.</string>
+    <string name="notification_adhan_playing">EZAN OKUNUYOR</string>
+    <string name="notification_next_prayer">Sıradaki namaz: %1$s</string>
+    <string name="notification_lock_screen_status">Sıradaki namaz ve geri sayım</string>
+    <string name="notification_mute_adhan">Ezan sesini sessize al</string>
+    <string name="prayer_status_channel_name">Namaz vakti durumu</string>
+    <string name="prayer_status_channel_description">Kilit ekranında sıradaki namaz geri sayımı.</string>
 </resources>

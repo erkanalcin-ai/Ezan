@@ -2,7 +2,10 @@ package com.ezan.app
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.Uri
+import android.os.Build
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
@@ -21,14 +24,20 @@ class MainActivity : FlutterActivity() {
     private var adhanPlaybackChannel: MethodChannel? = null
     private var adhanPlaybackStateChannel: EventChannel? = null
     private var prayerAlarmChannel: MethodChannel? = null
+    private var prayerWidgetChannel: MethodChannel? = null
+    private var prayerStatusChannel: MethodChannel? = null
     private var prayerCalculationSettingsChannel: MethodChannel? = null
     private var uiPreferencesChannel: MethodChannel? = null
     private var privacyPolicyChannel: MethodChannel? = null
     private var playUpdateChannel: MethodChannel? = null
+    private var pendingPrayerStatusResult: MethodChannel.Result? = null
     private lateinit var playUpdateManager: AppUpdateManager
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // Lock-screen status is paused; clear any opt-in saved by a prior build.
+        PrayerStatusPreferences.setEnabled(this, false)
+        PrayerStatusNotification.cancelStatus(this)
         playUpdateManager = AppUpdateManagerFactory.create(this)
         playUpdateChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -223,6 +232,83 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+        prayerWidgetChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.ezan.app/prayer_widgets",
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "shouldSync" -> result.success(PrayerWidgetSchedule.shouldSync(this))
+                    "clearSchedule" -> {
+                        PrayerWidgetSchedule.clear(this)
+                        result.success(null)
+                    }
+                    "replaceSchedule" -> {
+                        val rawEvents = call.argument<List<Map<String, Any>>>("events")
+                        if (rawEvents == null) {
+                            result.error(
+                                "INVALID_WIDGET_SCHEDULE",
+                                "Prayer events are required.",
+                                null,
+                            )
+                        } else {
+                            try {
+                                val events = JSONArray()
+                                rawEvents.forEach { event ->
+                                    val timestamp = (event["timestamp"] as? Number)?.toLong()
+                                    val prayer = (event["prayer"] as? String)
+                                        ?.lowercase()
+                                        ?.takeIf {
+                                            it in setOf("fajr", "dhuhr", "asr", "maghrib", "isha")
+                                        }
+                                    require(
+                                        timestamp != null &&
+                                            timestamp > 0L &&
+                                            prayer != null,
+                                    )
+                                    events.put(JSONObject().apply {
+                                        put("timestamp", timestamp)
+                                        put("prayer", prayer)
+                                    })
+                                }
+                                PrayerWidgetSchedule.replace(this, events.toString())
+                                result.success(null)
+                            } catch (error: IllegalArgumentException) {
+                                result.error(
+                                    "INVALID_WIDGET_SCHEDULE",
+                                    error.message,
+                                    null,
+                                )
+                            }
+                        }
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
+        prayerStatusChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.ezan.app/prayer_status",
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "getEnabled" -> result.success(PrayerStatusPreferences.isEnabled(this))
+                    "setEnabled" -> {
+                        val enabled = call.argument<Boolean>("enabled")
+                        if (enabled == null) {
+                            result.error(
+                                "INVALID_PRAYER_STATUS",
+                                "A lock-screen status setting is required.",
+                                null,
+                            )
+                        } else {
+                            setPrayerStatusEnabled(enabled, result)
+                        }
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
         prayerCalculationSettingsChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "com.ezan.app/prayer_calculation_settings",
@@ -256,6 +342,7 @@ class MainActivity : FlutterActivity() {
                             result.error("INVALID_THEME_MODE", "Theme mode is invalid.", null)
                         } else {
                             UiPreferences.setThemeMode(this, mode!!)
+                            PrayerWidgetSchedule.refresh(this)
                             result.success(null)
                         }
                     }
@@ -266,6 +353,7 @@ class MainActivity : FlutterActivity() {
                             result.error("INVALID_LOCALE", "Locale is not supported.", null)
                         } else {
                             UiPreferences.setLocale(this, languageCode)
+                            PrayerWidgetSchedule.refresh(this)
                             result.success(null)
                         }
                     }
@@ -290,6 +378,26 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != PRAYER_STATUS_PERMISSION_REQUEST) return
+        val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED &&
+            PrayerStatusPreferences.canPostNotifications(this)
+        PrayerStatusPreferences.setEnabled(this, granted)
+        PrayerWidgetSchedule.refresh(this)
+        pendingPrayerStatusResult?.success(granted)
+        pendingPrayerStatusResult = null
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        PrayerWidgetSchedule.refresh(this)
+    }
+
     override fun onDestroy() {
         qiblaOrientationStream?.stop()
         qiblaOrientationStream = null
@@ -301,6 +409,10 @@ class MainActivity : FlutterActivity() {
         adhanPlaybackChannel = null
         prayerAlarmChannel?.setMethodCallHandler(null)
         prayerAlarmChannel = null
+        prayerWidgetChannel?.setMethodCallHandler(null)
+        prayerWidgetChannel = null
+        prayerStatusChannel?.setMethodCallHandler(null)
+        prayerStatusChannel = null
         prayerCalculationSettingsChannel?.setMethodCallHandler(null)
         prayerCalculationSettingsChannel = null
         uiPreferencesChannel?.setMethodCallHandler(null)
@@ -309,10 +421,45 @@ class MainActivity : FlutterActivity() {
         privacyPolicyChannel = null
         playUpdateChannel?.setMethodCallHandler(null)
         playUpdateChannel = null
+        pendingPrayerStatusResult?.success(false)
+        pendingPrayerStatusResult = null
         super.onDestroy()
     }
 
+    private fun setPrayerStatusEnabled(enabled: Boolean, result: MethodChannel.Result) {
+        if (!enabled) {
+            PrayerStatusPreferences.setEnabled(this, false)
+            PrayerWidgetSchedule.refresh(this)
+            result.success(false)
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            if (pendingPrayerStatusResult != null) {
+                result.error(
+                    "PERMISSION_REQUEST_IN_PROGRESS",
+                    "A notification permission request is already active.",
+                    null,
+                )
+                return
+            }
+            pendingPrayerStatusResult = result
+            requestPermissions(
+                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                PRAYER_STATUS_PERMISSION_REQUEST,
+            )
+            return
+        }
+        val enabledBySystem = PrayerStatusPreferences.canPostNotifications(this)
+        PrayerStatusPreferences.setEnabled(this, enabledBySystem)
+        PrayerWidgetSchedule.refresh(this)
+        result.success(enabledBySystem)
+    }
+
     private companion object {
+        const val PRAYER_STATUS_PERMISSION_REQUEST = 5306
         const val PLAY_UPDATE_REQUEST_CODE = 5305
         const val PRIVACY_POLICY_URL =
             "https://erkanalcin-ai.github.io/Ezan/privacy-policy.html"

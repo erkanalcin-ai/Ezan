@@ -392,30 +392,6 @@ abstract class AppLocalizations {
   /// **'Hanefi'**
   String get hanafiAsr;
 
-  /// No description provided for @placeholderAudioNotice.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yalnızca geliştirme testi: geçici, sözsüz ses. Gerçek ezan kaydı değildir.'**
-  String get placeholderAudioNotice;
-
-  /// No description provided for @playPlaceholderAudio.
-  ///
-  /// In tr, this message translates to:
-  /// **'Test sesini çal'**
-  String get playPlaceholderAudio;
-
-  /// No description provided for @stopAudio.
-  ///
-  /// In tr, this message translates to:
-  /// **'Durdur'**
-  String get stopAudio;
-
-  /// No description provided for @audioPlaybackFailed.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yerel test sesi çalınamadı.'**
-  String get audioPlaybackFailed;
-
   /// No description provided for @adhanAlarmTitle.
   ///
   /// In tr, this message translates to:
@@ -427,6 +403,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Namaz vakitleri için yerel alarmları planla. Kesin alarm izni Android tarafından yönetilir ve sistem ayarlarından değiştirilebilir.'**
   String get adhanAlarmDescription;
+
+  /// No description provided for @lockScreenPrayerStatusTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilit ekranında namaz vakti'**
+  String get lockScreenPrayerStatusTitle;
+
+  /// No description provided for @lockScreenPrayerStatusDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıradaki namazı ve geri sayımı göster. Ezan okunurken simgeye dokunarak sesi kıs.'**
+  String get lockScreenPrayerStatusDescription;
+
+  /// No description provided for @notificationPermissionRequired.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilit ekranı durumunu göstermek için Ezan bildirim iznini aç.'**
+  String get notificationPermissionRequired;
 
   /// No description provided for @exactAlarmPermissionNeeded.
   ///

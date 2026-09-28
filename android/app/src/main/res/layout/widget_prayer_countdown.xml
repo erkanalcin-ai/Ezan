@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_surface_dark"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:paddingStart="20dp"
+    android:paddingTop="14dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="14dp">
+
+    <TextView
+        android:id="@+id/widget_brand"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:letterSpacing="0.18"
+        android:text="EZAN"
+        android:textColor="#D2AE5B"
+        android:textSize="10sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_prayer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:fontFamily="sans"
+        android:maxLines="1"
+        android:text="İKİNDİ"
+        android:textColor="#F4F0E1"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <Chronometer
+        android:id="@+id/widget_countdown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:fontFamily="sans"
+        android:format="%s"
+        android:includeFontPadding="false"
+        android:textColor="#F4F0E1"
+        android:textSize="32sp"
+        android:textStyle="normal" />
+
+    <TextView
+        android:id="@+id/widget_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:fontFamily="sans"
+        android:maxLines="1"
+        android:text="Sonraki namaza kalan süre"
+        android:textColor="#C5BFAE"
+        android:textSize="12sp" />
+</LinearLayout>

@@ -176,24 +176,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hanafiAsr => 'Hanafi';
 
   @override
-  String get placeholderAudioNotice =>
-      'Development test only: temporary non-voice tone. This is not an adhan recording.';
-
-  @override
-  String get playPlaceholderAudio => 'Play test tone';
-
-  @override
-  String get stopAudio => 'Stop';
-
-  @override
-  String get audioPlaybackFailed => 'The local test tone could not be played.';
-
-  @override
   String get adhanAlarmTitle => 'Automatic adhan';
 
   @override
   String get adhanAlarmDescription =>
       'Schedule local prayer alarms. Exact alarm access is managed by Android and can be changed in system settings.';
+
+  @override
+  String get lockScreenPrayerStatusTitle => 'Prayer status on lock screen';
+
+  @override
+  String get lockScreenPrayerStatusDescription =>
+      'Show the next prayer and countdown. Tap the speaker icon to mute the adhan while it plays.';
+
+  @override
+  String get notificationPermissionRequired =>
+      'Allow Ezan notifications to show the lock-screen status.';
 
   @override
   String get exactAlarmPermissionNeeded =>

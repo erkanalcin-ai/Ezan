@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
@@ -85,9 +84,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ? playbackStatus!.isMuted
         : manualPlaybackMuted;
     final selected = dashboard?.asrMethod ?? AsrMethod.standard;
-    final previewStatus = kDebugMode
-        ? ref.watch(adhanAudioPreviewProvider)
-        : AdhanAudioPreviewStatus.stopped;
     final activeLocale = locale ?? Localizations.localeOf(context);
     final currentVolume = volume.asData?.value;
     final theme = Theme.of(context);
@@ -351,55 +347,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ],
                         ),
                       ),
-                      if (kDebugMode) ...[
-                        const _PanelDivider(),
-                        Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.placeholderAudioNotice,
-                                style: theme.textTheme.bodySmall,
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  FilledButton.icon(
-                                    onPressed: () => ref
-                                        .read(
-                                          adhanAudioPreviewProvider.notifier,
-                                        )
-                                        .play(),
-                                    icon: const Icon(Icons.play_arrow_rounded),
-                                    label: Text(l10n.playPlaceholderAudio),
-                                  ),
-                                  OutlinedButton.icon(
-                                    onPressed: () => ref
-                                        .read(
-                                          adhanAudioPreviewProvider.notifier,
-                                        )
-                                        .stop(),
-                                    icon: const Icon(Icons.stop_rounded),
-                                    label: Text(l10n.stopAudio),
-                                  ),
-                                ],
-                              ),
-                              if (previewStatus ==
-                                  AdhanAudioPreviewStatus.failed)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Text(
-                                    l10n.audioPlaybackFailed,
-                                    style: TextStyle(color: scheme.error),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
